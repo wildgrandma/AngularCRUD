@@ -2,65 +2,71 @@ package SBI_IND_CORP;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class BankAccount { private String name;
-    private final long accountNumber; // Made final to prevent modification
+public abstract class BankAccount implements Transactions {
+    private String name;
+    private final long accountNumber;
+    private double balance;
     private Integer userId;
     private String idProof;
 
-    // Static counter for auto-generating account numbers
     private static final AtomicLong ACCOUNT_NUMBER_GENERATOR = new AtomicLong(1000000000L);
 
     // Constructor
-    public BankAccount(String name, Integer userId, String idProof) {
+    public BankAccount(String name, double initialBalance, Integer userId, String idProof) {
         this.name = name;
-        this.accountNumber = ACCOUNT_NUMBER_GENERATOR.getAndIncrement(); // Auto-generate account number
+        this.accountNumber = ACCOUNT_NUMBER_GENERATOR.getAndIncrement();
+        this.balance = initialBalance;
         this.userId = userId;
-        this.idProof = generateHash(idProof); // Store hashed ID proof
-    }
-
-    // Getter and Setter methods
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public long getAccountNumber() {
-        return accountNumber; // No setter for immutable property
-    }
-
-    public String getIdProof() {
-        return idProof;
-    }
-
-    public void setIdProof(String idProof) {
         this.idProof = generateHash(idProof);
     }
 
-    public Integer getUserId() {
-        return userId;
+    // Deposit method (Public API)
+    public void deposit(double amount) {
+        if (amount > 0) {
+            updateBalance(amount);
+            System.out.println("Deposited $" + amount + " | New Balance: $" + balance);
+        } else {
+            System.out.println("Invalid deposit amount!");
+        }
     }
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
+    // Withdraw method (Public API)
+    public void withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            updateBalance(-amount);
+            System.out.println("Withdrawn $" + amount + " | New Balance: $" + balance);
+        } else {
+            System.out.println("Insufficient funds or invalid amount!");
+        }
     }
 
-    // ID Validation Logic
-    public boolean validateID(String idHash) {
-        return generateHash(idHash).equals(idProof);
+    // ✅ Private method to update balance (Encapsulation & Abstraction)
+    private void updateBalance(double amount) {
+        balance += amount; // Hiding internal balance update logic
     }
 
-    // Hashing Function for ID Proof
-    private String generateHash(String id) {
-        return String.valueOf(id.hashCode());
+    // Validate User ID (Implemented from Transactions)
+    @Override
+    public boolean verifyUserID() {
+        return userId != null && userId > 0;
     }
 
-    // Display Account Details
-    public void displayAccountDetails() {
+    // Abstract method for account-specific processing
+    public abstract void processPayment();
+
+    // Getter for balance (Read-only)
+    public double getBalance() {
+        return balance;
+    }
+
+    public void displayAccountInfo() {
         System.out.println("Account Holder: " + name);
         System.out.println("Account Number: " + accountNumber);
-        System.out.println("User ID: " + userId);
+        System.out.println("Current Balance: $" + balance);
+    }
+
+    // Hashing Function for ID Proof (Encapsulation)
+    private String generateHash(String id) {
+        return String.valueOf(id.hashCode());
     }
 }
